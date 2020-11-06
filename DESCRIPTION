@@ -1,13 +1,17 @@
 Package: propensityml
-Title: What the Package Does (One Line, Title Case)
+Title: Propensity score weighting using machine learning methods
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Young Geun",
            family = "Kim",
            role = c("aut", "cre"),
            email = "dudrmshub@gmail.com")
-Description: What the package does (one paragraph).
+Maintainer: Young-geun Kim <dudrms33@g.skku.edu>
+Description: Implement machine learning models to improve propensity score weight,
+    especially tree models, e.g.
+    CART, pruned CART, random forests, etc.
 License: MIT + file LICENSE
+URL: https://github.com/ygeunkim
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
