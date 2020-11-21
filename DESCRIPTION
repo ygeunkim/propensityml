@@ -16,3 +16,14 @@ Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.1.1
+Imports: 
+    stats,
+    magrittr,
+    data.table,
+    Matrix,
+    tibble,
+    dplyr,
+    randomForest,
+    rpart
+Depends: 
+    R (>= 2.10)
