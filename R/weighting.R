@@ -26,6 +26,11 @@ add_propensity <- function(data, object = NULL, formula = NULL, method = c("logi
         ps_rf(formula, data = ., ...) %>%
         estimate_ps()
       data
+    } else if (method == "cart") {
+      data[[var]] <-
+        data %>%
+        ps_cart(formula, data = ., ...) %>%
+        estimate_ps()
     }
   }
 }

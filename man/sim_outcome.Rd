@@ -2,30 +2,48 @@
 % Please edit documentation in R/simdata.R
 \name{sim_outcome}
 \alias{sim_outcome}
-\title{Simulation dataset}
+\title{Simulating Dataset for Various Scenarios}
 \usage{
-sim_outcome(n, covmat = build_covariate())
+sim_outcome(
+  n,
+  covmat = build_covariate(),
+  scenario = LETTERS[1:7],
+  b = c(0, 0.8, -0.25, 0.6, -0.4, -0.8, -0.5, 0.7),
+  a = c(-3.85, 0.3, -0.36, -73, -0.2, 0.71, -0.19, 0.26),
+  gam = -0.4
+)
 }
 \arguments{
 \item{n}{sample size}
 
 \item{covmat}{Covariance matrix of the covariates}
+
+\item{scenario}{scenarios}
+
+\item{b}{coefficients for confounder and exposure predictors}
+
+\item{a}{coefficients in outcome model}
+
+\item{gam}{coefficient of exposure}
 }
 \description{
-generates dataset with various scenarios
+generates a dataset for various scenarios
 }
 \details{
-This function reproduces the setting in the paper in Setoguchi et al. and Lee et al.
-First generate binary covariates (w1, w3, w5, w6, w8, w9), and continuous covariates (w2, w4, w7, w10).
-\enumerate{
-\item Generate 10-dim multivariate normal v1, v3, v5, v6, v8, v9 (corresponding to binary), and w7, w10
+About scenarios:
+\itemize{
+\item A: additivity and linearity
+\item B: mild non-linearity
+\item C: moderate non-linearity
+\item D: mild non-additivity
+\item E: mild non-additivity and non-linearity
+\item F: moderate non-linearity
+\item F: moderate non-additivity and non-linearity
 }
+See Appendix of Setoguchi et al.
 }
 \references{
 Setoguchi, S., Schneeweiss, S., Brookhart, M. A., Glynn, R. J., & Cook, E. F. (2008). \emph{Evaluating uses of data mining techniques in propensity score estimation: a simulation study}. Pharmacoepidemiology and Drug Safety, 17(6), 546–555 \url{https://doi.org/10.1002/pds.1555}
 
 Lee, B. K., Lessler, J., & Stuart, E. A. (2010). \emph{Improving propensity score weighting using machine learning. Statistics in Medicine}. Statistics in Medicine, 29(3), 337-346. \url{https://doi.org/10.1002/sim.3782}
-}
-\seealso{
-\code{\link{build_covariate}}
 }

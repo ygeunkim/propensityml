@@ -14,7 +14,7 @@ ps_glm(formula, data, ...)
 \item{...}{For additional options of \link[stats]{glm}.}
 }
 \value{
-\link[propensityml]{propmod} class, a list with model and its name
+\code{\link{propmod}} class, a list with model and its name
 \itemize{
 \item model - \link[stats]{glm} model
 \item name - "glm"
@@ -29,6 +29,9 @@ Propensity score is
 \deqn{e(X) = P(Z_i = 1 \mid X_i = x)},
 which is the conditional probability of receiving treatment.
 Naturally, logit model is the easiest way to estimate the score.
+}
+\examples{
+fit <- chemical \%>\% ps_glm(poisox ~ age + sex, data = .)
 }
 \references{
 Rosenbaum, P. R., & Rubin, D. B. (1983). \emph{The central role of the propensity score in observational studies for causal effects}. Biometrika, 70(1), 41-55. \url{https://doi.org/10.1093/biomet/70.1.41}

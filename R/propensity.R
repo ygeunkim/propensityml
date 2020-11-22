@@ -5,7 +5,7 @@
 #' @param formula an object \link[stats]{formula} to be fitted. Response should be treatment.
 #' @param data optional data frame.
 #' @param ... For additional options of \link[stats]{glm}.
-#' @return \link[propensityml]{propmod} class, a list with model and its name
+#' @return \code{\link{propmod}} class, a list with model and its name
 #' \itemize{
 #'  \item model - \link[stats]{glm} model
 #'  \item name - "glm"
@@ -17,6 +17,8 @@
 #' \deqn{e(X) = P(Z_i = 1 \mid X_i = x)},
 #' which is the conditional probability of receiving treatment.
 #' Naturally, logit model is the easiest way to estimate the score.
+#' @examples
+#' fit <- chemical %>% ps_glm(poisox ~ age + sex, data = .)
 #' @export
 ps_glm <- function(formula, data, ...) {
   result <-
@@ -28,8 +30,9 @@ ps_glm <- function(formula, data, ...) {
     data = data
   ))
   class(res) <- "propmod"
-  result
-  return(invisible(res))
+  # result
+  # return(invisible(res))
+  res
 }
 
 #' Fitting Random Forests for Propensity Score
@@ -39,7 +42,7 @@ ps_glm <- function(formula, data, ...) {
 #' @param formula an object \link[stats]{formula} to be fitted. Response should be treatment.
 #' @param data optional data frame. REMEMBER that treatment should be `TRUE` or `1`.
 #' @param ... For additional options of \link[randomForest]{randomForest}.
-#' @return \link[propensityml]{propmod} class, a list with model and its name
+#' @return \code{\link{propmod}} class, a list with model and its name
 #' \itemize{
 #'  \item model - \link[randomForest]{randomForest}
 #'  \item name - "rf"
@@ -47,6 +50,8 @@ ps_glm <- function(formula, data, ...) {
 #' }
 #' @references Lee, B. K., Lessler, J., & Stuart, E. A. (2010). \emph{Improving propensity score weighting using machine learning. Statistics in Medicine}. Statistics in Medicine, 29(3), 337-346. \url{https://doi.org/10.1002/sim.3782}
 #' @importFrom randomForest randomForest
+#' @examples
+#' fit <- chemical %>% ps_rf(poisox ~ age + sex, data = .)
 #' @export
 ps_rf <- function(formula, data, ...) {
   result <-
@@ -58,8 +63,9 @@ ps_rf <- function(formula, data, ...) {
     data = data
   ))
   class(res) <- "propmod"
-  result
-  return(invisible(res))
+  # result
+  # return(invisible(res))
+  res
 }
 
 #' Fitting CART for Propensity Score
@@ -83,8 +89,9 @@ ps_cart <- function(formula, data, ...) {
     data = data
   ))
   class(res) <- "propmod"
-  result
-  return(invisible(res))
+  # result
+  # return(invisible(res))
+  res
 }
 
 # Estimate-------------------------------------
@@ -93,8 +100,12 @@ ps_cart <- function(formula, data, ...) {
 #'
 #' @description
 #' estimates propensity score based on the given model
-#' @param object fitted \link[propensityml]{propmod} object
+#' @param object fitted \code{\link{propmod}} object
 #' @param ... additional arguments for \link[stats]{predict}
+#' @seealso
+#' \code{\link{ps_glm}}
+#' \code{\link{ps_rf}}
+#' \code{\link{ps_cart}}
 #' @export
 estimate_ps <- function(object, ...) {
   if (object$name == "glm") {
@@ -107,6 +118,15 @@ estimate_ps <- function(object, ...) {
         TRUE
       )
     pred <- predict(object$model, type = "prob")
+    return(pred[, colnames(pred) == trt_lev])
+  } else if (object$name == "cart") {
+    pred <- predict(object$model, type = "prob")
+    trt_lev <-
+      ifelse(
+        which(c("1", "TRUE") %in% colnames(pred)) == 1,
+        1,
+        TRUE
+      )
     return(pred[, colnames(pred) == trt_lev])
   }
 }
@@ -123,4 +143,14 @@ estimate_ps <- function(object, ...) {
 #' @importFrom methods setOldClass
 #' @exportClass propmod
 setOldClass("propmod")
+
+
+#' @rdname propmod-class
+#' @export
+print.propmod <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
+  print(x$model)
+  invisible(x$name)
+  invisible(x$data)
+}
+
 

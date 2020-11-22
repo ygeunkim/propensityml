@@ -4,7 +4,11 @@
 \alias{propmod-class}
 \alias{propmod}
 \alias{cvar-class}
+\alias{print.propmod}
 \title{\code{propmod} class}
+\usage{
+\method{print}{propmod}(x, digits = max(3L, getOption("digits") - 3L), ...)
+}
 \description{
 The \code{propmod} class ready for computing propensity score
 }

@@ -7,10 +7,15 @@
 estimate_ps(object, ...)
 }
 \arguments{
-\item{object}{fitted \link[propensityml]{propmod} object}
+\item{object}{fitted \code{\link{propmod}} object}
 
 \item{...}{additional arguments for \link[stats]{predict}}
 }
 \description{
 estimates propensity score based on the given model
+}
+\seealso{
+\code{\link{ps_glm}}
+\code{\link{ps_rf}}
+\code{\link{ps_cart}}
 }

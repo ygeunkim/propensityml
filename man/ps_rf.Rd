@@ -14,7 +14,7 @@ ps_rf(formula, data, ...)
 \item{...}{For additional options of \link[randomForest]{randomForest}.}
 }
 \value{
-\link[propensityml]{propmod} class, a list with model and its name
+\code{\link{propmod}} class, a list with model and its name
 \itemize{
 \item model - \link[randomForest]{randomForest}
 \item name - "rf"
@@ -23,6 +23,9 @@ ps_rf(formula, data, ...)
 }
 \description{
 fits random forests before estimating propensity scores
+}
+\examples{
+fit <- chemical \%>\% ps_rf(poisox ~ age + sex, data = .)
 }
 \references{
 Lee, B. K., Lessler, J., & Stuart, E. A. (2010). \emph{Improving propensity score weighting using machine learning. Statistics in Medicine}. Statistics in Medicine, 29(3), 337-346. \url{https://doi.org/10.1002/sim.3782}
