@@ -17,6 +17,7 @@
 #' \deqn{e(X) = P(Z_i = 1 \mid X_i = x)},
 #' which is the conditional probability of receiving treatment.
 #' Naturally, logit model is the easiest way to estimate the score.
+#' @importFrom stats glm binomial
 #' @examples
 #' fit <- chemical %>% ps_glm(poisox ~ age + sex, data = .)
 #' @export
@@ -151,6 +152,7 @@ ps_svm <- function(formula, data, scale = FALSE, kernel = c("radial", "linear", 
 #' \code{\link{ps_rf}}
 #' \code{\link{ps_cart}}
 #' \code{\link{ps_svm}}
+#' @importFrom stats predict
 #' @export
 estimate_ps <- function(object, ...) {
   if (object$name == "glm") {
@@ -202,6 +204,9 @@ setOldClass("propmod")
 
 
 #' @rdname propmod-class
+#' @param x `propmod` object
+#' @param digits digit
+#' @param ... additional arguments
 #' @export
 print.propmod <- function(x, digits = max(3L, getOption("digits") - 3L), ...) {
   print(x$model)

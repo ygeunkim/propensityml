@@ -26,6 +26,10 @@ Imports:
     randomForest,
     rpart,
     e1071,
-    stringr
+    stringr,
+    mvtnorm,
+    methods
 Depends: 
     R (>= 2.10)
+Suggests: 
+    testthat

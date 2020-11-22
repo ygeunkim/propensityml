@@ -140,6 +140,7 @@ sim_covariate <- function(n, covmat = build_covariate()) {
 #' }
 #' See Appendix of Setoguchi et al.
 #' @import data.table
+#' @importFrom stats runif
 #' @export
 sim_outcome <- function(n, covmat = build_covariate(), scenario = LETTERS[1:7],
                         b = c(0, .8, -.25, .6, -.4, -.8, -.5, .7),

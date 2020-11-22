@@ -9,6 +9,13 @@
 \usage{
 \method{print}{propmod}(x, digits = max(3L, getOption("digits") - 3L), ...)
 }
+\arguments{
+\item{x}{\code{propmod} object}
+
+\item{digits}{digit}
+
+\item{...}{additional arguments}
+}
 \description{
 The \code{propmod} class ready for computing propensity score
 }
