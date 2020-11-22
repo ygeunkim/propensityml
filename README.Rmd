@@ -16,6 +16,6 @@ This is an R package to help the [SKKU modern statistical methods project](https
 ## Installation
 
 ```{r, eval=FALSE}
-# install.packages("devtools")
-devtools::install_github("ygeunkim/propensityml")
+# install.packages("remotes")
+remotes::install_github("ygeunkim/propensityml")
 ```

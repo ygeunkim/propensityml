@@ -20,6 +20,6 @@ doi:10.1002/sim.3782](https://onlinelibrary.wiley.com/doi/abs/10.1002/sim.3782)
 ## Installation
 
 ``` r
-# install.packages("devtools")
-devtools::install_github("ygeunkim/propensityml")
+# install.packages("remotes")
+remotes::install_github("ygeunkim/propensityml")
 ```
