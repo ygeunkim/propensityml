@@ -3,6 +3,8 @@
 
 [![Travis build
 status](https://travis-ci.com/ygeunkim/propensityml.svg?branch=master)](https://travis-ci.com/ygeunkim/propensityml)
+[![Codecov test
+coverage](https://codecov.io/gh/ygeunkim/propensityml/branch/master/graph/badge.svg)](https://codecov.io/gh/ygeunkim/propensityml?branch=master)
 
 ## Overview
 
