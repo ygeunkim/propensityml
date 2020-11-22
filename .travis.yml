@@ -1,0 +1,18 @@
+# R for travis: see documentation at https://docs.travis-ci.com/user/languages/r
+
+language: R
+cache: packages
+warnings_are_errors: false
+
+r_packages:
+  - covr
+
+jobs:
+  include:
+  - r: devel
+  - os: osx
+  - r: release
+    after_success:
+    - Rscript -e 'covr::codecov()'
+    before_cache:
+    - Rscript -e 'devtools::install_github("ygeunkim/propensityml")'

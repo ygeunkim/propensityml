@@ -1,6 +1,9 @@
 
 # propensityml <a href='https://github.com/ygeunkim/propensityml'><img src='man/figures/logo.png' align="right" height="139" /></a>
 
+[![Travis build
+status](https://travis-ci.com/ygeunkim/propensityml.svg?branch=master)](https://travis-ci.com/ygeunkim/propensityml)
+
 ## Overview
 
 This is an R package to help the [SKKU modern statistical methods
