@@ -75,7 +75,12 @@ ps_rf <- function(formula, data, ...) {
 #' @param formula an object \link[stats]{formula} to be fitted. Response should be treatment.
 #' @param data optional data frame.
 #' @param ... For additional options of \link[rpart]{rpart}.
-#' @return \link[rpart]{rpart}
+#' @return \code{\link{propmod}} class, a list with model and its name
+#' \itemize{
+#'  \item model - \link[rpart]{rpart}
+#'  \item name - "cart"
+#'  \item data - dataset
+#' }
 #' @references Lee, B. K., Lessler, J., & Stuart, E. A. (2010). \emph{Improving propensity score weighting using machine learning. Statistics in Medicine}. Statistics in Medicine, 29(3), 337-346. \url{https://doi.org/10.1002/sim.3782}
 #' @importFrom rpart rpart
 #' @export
@@ -94,6 +99,45 @@ ps_cart <- function(formula, data, ...) {
   res
 }
 
+#' Fitting SVM for Propensity Score
+#'
+#' @description
+#' Fits Support Vector Machine before estimating propensity scores
+#' @param formula an object \link[stats]{formula} to be fitted. Response should be treatment.
+#' @param data optional data frame.
+#' @param scale scale the data?
+#' @param kernel kernel used in SVM. See \link[e1071]{svm}
+#' @param cost cost parameter C
+#' @param gamma parameter in some kernel
+#' @param ... For additional options of \link[e1071]{svm}
+#' @return \code{\link{propmod}} class, a list with model and its name
+#' \itemize{
+#'  \item model - \link[e1071]{svm}
+#'  \item name - "SVM"
+#'  \item data - dataset
+#' }
+#' @importFrom e1071 svm
+#' @importFrom stringr str_split
+#' @export
+ps_svm <- function(formula, data, scale = FALSE, kernel = c("radial", "linear", "polynomial", "sigmoid"), cost = 1, gamma, ...) {
+  kernel <- match.arg(kernel)
+  if (missing(gamma)) gamma <- 1 / length(str_split(as.character(formula)[3], pattern = "\\+")[[1]])
+  result <-
+    data %>%
+    svm(
+      formula, data = .,
+      scale = scale, kernel = kernel, cost = cost, gamma = gamma,
+      type = "C-classification", probability = TRUE, fitted = FALSE, ...
+    )
+  res <- structure(list(
+    model = result,
+    name = "SVM",
+    data = data
+  ))
+  class(res) <- "propmod"
+  res
+}
+
 # Estimate-------------------------------------
 
 #' Estimation of Propensity Score
@@ -106,6 +150,7 @@ ps_cart <- function(formula, data, ...) {
 #' \code{\link{ps_glm}}
 #' \code{\link{ps_rf}}
 #' \code{\link{ps_cart}}
+#' \code{\link{ps_svm}}
 #' @export
 estimate_ps <- function(object, ...) {
   if (object$name == "glm") {
@@ -121,6 +166,17 @@ estimate_ps <- function(object, ...) {
     return(pred[, colnames(pred) == trt_lev])
   } else if (object$name == "cart") {
     pred <- predict(object$model, type = "prob")
+    trt_lev <-
+      ifelse(
+        which(c("1", "TRUE") %in% colnames(pred)) == 1,
+        1,
+        TRUE
+      )
+    return(pred[, colnames(pred) == trt_lev])
+  } else if (object$name == "SVM") {
+    pred <-
+      predict(object$model, object$data, probability = TRUE) %>%
+      attr("probabilities")
     trt_lev <-
       ifelse(
         which(c("1", "TRUE") %in% colnames(pred)) == 1,

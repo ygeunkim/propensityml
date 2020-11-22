@@ -18,4 +18,5 @@ estimates propensity score based on the given model
 \code{\link{ps_glm}}
 \code{\link{ps_rf}}
 \code{\link{ps_cart}}
+\code{\link{ps_svm}}
 }

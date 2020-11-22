@@ -14,7 +14,12 @@ ps_cart(formula, data, ...)
 \item{...}{For additional options of \link[rpart]{rpart}.}
 }
 \value{
-\link[rpart]{rpart}
+\code{\link{propmod}} class, a list with model and its name
+\itemize{
+\item model - \link[rpart]{rpart}
+\item name - "cart"
+\item data - dataset
+}
 }
 \description{
 fits classification tree before estimating propensity scores
