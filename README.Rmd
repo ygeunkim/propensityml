@@ -2,6 +2,19 @@
 output: github_document
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  comment = "#>",
+  collapse = TRUE,
+  out.width = "70%",
+  fig.align = "center",
+  fig.width = 6,
+  fig.asp = .618,
+  fig.pos = "H"
+  )
+options(digits = 3)
+```
+
 # propensityml <a href='https://github.com/ygeunkim/propensityml'><img src='man/figures/logo.png' align="right" height="139" /></a>
 
 [![Travis build status](https://travis-ci.com/ygeunkim/propensityml.svg?branch=master)](https://travis-ci.com/ygeunkim/propensityml)
@@ -19,3 +32,44 @@ This is an R package to help the [SKKU modern statistical methods project](https
 # install.packages("remotes")
 remotes::install_github("ygeunkim/propensityml")
 ```
+
+## Usage
+
+`propensityml` package aims at estimating propensity score with machine learning methods as in the paper mentioned above.
+
+```{r}
+library(propensityml)
+```
+
+The package provides simulation function that generates the dataset in the paper:
+
+[Setoguchi, S., Schneeweiss, S., Brookhart, M. A., Glynn, R. J., & Cook, E. F. (2008). Evaluating uses of data mining techniques in propensity score estimation: a simulation study. Pharmacoepidemiology and Drug Safety, 17(6), 546–555 https://doi.org/10.1002/pds.1555](https://onlinelibrary.wiley.com/doi/abs/10.1002/pds.1555)
+
+and additional toy datasets. Consider simulation.
+
+The most simplest scenario, i.e. additivity and linearity model:
+
+```{r}
+(x <- sim_outcome(1000, covmat = build_covariate()))
+```
+
+```{r}
+(fit_rf <- 
+  x %>% 
+  ps_rf(exposure ~ . -outcome_prob, data = .))
+```
+
+We have defined the class named `propmod` for some usage.
+
+```{r}
+class(fit_rf)
+```
+
+Estimating propensity score:
+
+```{r}
+estimate_ps(fit_rf) %>% head()
+```
+
+
+
