@@ -29,7 +29,8 @@ Imports:
     stringr,
     mvtnorm,
     methods,
-    rlang
+    rlang,
+    ggplot2
 Depends: 
     R (>= 2.10)
 Suggests: 
