@@ -8,7 +8,7 @@
 #' @param trt_indicator value that indicates the unit is treated, e.g. 1 or TRUE
 #' @param outcome outcome variable included in the data. It should be specified because it is not covariate.
 #' @import data.table
-#' @importFrom stats setNames
+#' @importFrom stats setNames var
 #' @export
 compute_balance <- function(data, col_name = "balance", treatment, trt_indicator = 1, outcome) {
   data %>%

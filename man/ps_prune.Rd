@@ -9,6 +9,8 @@ ps_prune(object, cp, ...)
 \arguments{
 \item{object}{fitted \code{\link{propmod}} object. Its \code{name} should be "cart"}
 
+\item{cp}{Complexity parameter for pruning the tree}
+
 \item{...}{Additional arguments for \link[rpart]{prune}.}
 }
 \description{

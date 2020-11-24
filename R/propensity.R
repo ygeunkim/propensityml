@@ -165,6 +165,7 @@ plot_cp <- function(object, ...) {
 #' @description
 #' prunes the result of \code{\link{ps_cart}}.
 #' @param object fitted \code{\link{propmod}} object. Its `name` should be "cart"
+#' @param cp Complexity parameter for pruning the tree
 #' @param ... Additional arguments for \link[rpart]{prune}.
 #' @importFrom rpart prune
 #' @export
