@@ -139,6 +139,48 @@ ps_svm <- function(formula, data, scale = FALSE, kernel = c("radial", "linear", 
   res
 }
 
+#' Plot a Complexity Parameter Table
+#'
+#' @description
+#' Before pruning, plot complexity parameter from CART.
+#' @param object fitted \code{\link{propmod}} object. Its `name` should be "cart"
+#' @param ... Additional arguments for \link[ggplot2]{geom_pointrange}
+#' @importFrom ggplot2 ggplot aes geom_path geom_pointrange labs
+#' @export
+plot_cp <- function(object, ...) {
+  if (object$name != "cart") stop("Model should be cart")
+  object$model$cptable %>%
+    as.data.frame() %>%
+    ggplot(aes(x = nsplit + 1, y = xerror)) +
+    geom_path() +
+    geom_pointrange(aes(ymin = xerror - xstd, ymax = xerror + xstd), ...) +
+    labs(
+      x = "Size of Tree",
+      y = "X-val Relative Error"
+    )
+}
+
+#' Pruning CART
+#'
+#' @description
+#' prunes the result of \code{\link{ps_cart}}.
+#' @param object fitted \code{\link{propmod}} object. Its `name` should be "cart"
+#' @param ... Additional arguments for \link[rpart]{prune}.
+#' @importFrom rpart prune
+#' @export
+ps_prune <- function(object, cp, ...) {
+  if (object$name != "cart") stop("Model should be cart")
+  result <- prune(object$model, cp, ...)
+  res <- structure(list(
+    model = result,
+    name = "pruned",
+    data = object$data
+  ))
+  class(res) <- "propmod"
+  res
+}
+
+
 # Estimate-------------------------------------
 
 #' Estimation of Propensity Score
