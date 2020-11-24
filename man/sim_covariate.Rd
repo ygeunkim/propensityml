@@ -19,6 +19,7 @@ This function reproduces the setting in the paper in Setoguchi et al. and Lee et
 First generate binary covariates (w1, w3, w5, w6, w8, w9), and continuous covariates (w2, w4, w7, w10).
 \enumerate{
 \item Generate 10-dim multivariate normal v1, v3, v5, v6, v8, v9 (corresponding to binary), and w7, w10
+\item Dichotomize w1, w3, w5, w6, w8, w9
 }
 }
 \references{

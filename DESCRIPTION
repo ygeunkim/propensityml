@@ -30,7 +30,8 @@ Imports:
     mvtnorm,
     methods,
     rlang,
-    ggplot2
+    ggplot2,
+    foreach
 Depends: 
     R (>= 2.10)
 Suggests: 

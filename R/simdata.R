@@ -86,7 +86,8 @@ build_covariate <- function(sig = rep(1L, 10),
 #' This function reproduces the setting in the paper in Setoguchi et al. and Lee et al.
 #' First generate binary covariates (w1, w3, w5, w6, w8, w9), and continuous covariates (w2, w4, w7, w10).
 #' \enumerate{
-#' \item Generate 10-dim multivariate normal v1, v3, v5, v6, v8, v9 (corresponding to binary), and w7, w10
+#'  \item Generate 10-dim multivariate normal v1, v3, v5, v6, v8, v9 (corresponding to binary), and w7, w10
+#'  \item Dichotomize w1, w3, w5, w6, w8, w9
 #' }
 #' @seealso \code{\link{build_covariate}}
 #' @importFrom mvtnorm rmvnorm
@@ -255,4 +256,40 @@ sim_outcome <- function(n, covmat = build_covariate(), scenario = LETTERS[1:7],
     (bin_cols) := lapply(.SD, factor),
     .SDcols = bin_cols]
   x[, .SD, .SDcols = c(paste0("w", 1:10), "exposure", "outcome_prob")]
+}
+
+#' Simulation Setting
+#'
+#' @description
+#' generates multiple sets of data-set
+#' @param N number of data set generation
+#' @param n_dat sample size
+#' @param covmat Covariance matrix of the covariates
+#' @param scenario scenarios
+#' @param b coefficients for confounder and exposure predictors
+#' @param a coefficients in outcome model
+#' @param gam coefficient of exposure
+#' @param parallel parallelize? By default, `FALSE`.
+#' @references Setoguchi, S., Schneeweiss, S., Brookhart, M. A., Glynn, R. J., & Cook, E. F. (2008). \emph{Evaluating uses of data mining techniques in propensity score estimation: a simulation study}. Pharmacoepidemiology and Drug Safety, 17(6), 546–555 \url{https://doi.org/10.1002/pds.1555}
+#' @references Lee, B. K., Lessler, J., & Stuart, E. A. (2010). \emph{Improving propensity score weighting using machine learning. Statistics in Medicine}. Statistics in Medicine, 29(3), 337-346. \url{https://doi.org/10.1002/sim.3782}
+#' @details
+#' This function constructs \link[data.table]{data.table-class} for simulation using \code{\link{sim_outcome}}.
+#' \code{mcname} represents the index of the replicate.
+#' @import data.table
+#' @import foreach
+#' @export
+mc_setoguchi <- function(N, n_dat, covmat = build_covariate(), scenario = LETTERS[1:7],
+                         b = c(0, .8, -.25, .6, -.4, -.8, -.5, .7),
+                         a = c(-3.85, .3, -.36, -73, -.2, .71, -.19, .26),
+                         gam = -.4, parallel = FALSE) {
+  if (parallel) {
+    mc_list <- foreach(i = 1:N, .combine = rbind) %dopar% {
+      sim_outcome(n_dat, covmat, scenario, b, a, gam)[, mcname := i]
+    }
+  } else {
+    mc_list <- foreach(i = 1:N, .combine = rbind) %do% {
+      sim_outcome(n_dat, covmat, scenario, b, a, gam)[, mcname := i]
+    }
+  }
+  mc_list
 }
