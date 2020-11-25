@@ -14,35 +14,52 @@
 #' }
 #' @param var The name of the propensity score column.
 #' @param ... Additional arguments of fitting functions
+#' @import data.table
 #' @export
 add_propensity <- function(data, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), var = "propensity", ...) {
   method <- match.arg(method)
   if (!is.null(object)) {
-    data[[var]] <- estimate_ps(object, ...)
-    data
+    # data[[var]] <- estimate_ps(object, ...)
+    data[,
+         (var) := estimate_ps(object, ...)]
+    data[]
   } else {
     if (method == "logit") {
-      data[[var]] <-
-        data %>%
-        ps_glm(formula, data = ., ...) %>%
-        estimate_ps()
-      data
+      # data[[var]] <-
+      #   data %>%
+      #   ps_glm(formula, data = ., ...) %>%
+      #   estimate_ps()
+      data[,
+           (var) := ps_glm(formula, data = .SD, ...) %>%
+             estimate_ps()]
+      data[]
     } else if (method == "rf") {
-      data[[var]] <-
-        data %>%
-        ps_rf(formula, data = ., ...) %>%
-        estimate_ps()
-      data
+      # data[[var]] <-
+      #   data %>%
+      #   ps_rf(formula, data = ., ...) %>%
+      #   estimate_ps()
+      data[,
+           (var) := ps_glm(formula, data = .SD, ...) %>%
+             estimate_ps()]
+      data[]
     } else if (method == "cart") {
-      data[[var]] <-
-        data %>%
-        ps_cart(formula, data = ., ...) %>%
-        estimate_ps()
+      # data[[var]] <-
+      #   data %>%
+      #   ps_cart(formula, data = ., ...) %>%
+      #   estimate_ps()
+      data[,
+           (var) := ps_cart(formula, data = .SD, ...) %>%
+             estimate_ps()]
+      data[]
     } else if (method == "SVM") {
-      data[[var]] <-
-        data %>%
-        ps_svm(formula, data = ., ...) %>%
-        estimate_ps()
+      # data[[var]] <-
+      #   data %>%
+      #   ps_svm(formula, data = ., ...) %>%
+      #   estimate_ps()
+      data[,
+           (var) := ps_svm(formula, data = .SD, ...) %>%
+             estimate_ps()]
+      data[]
     }
   }
 }
