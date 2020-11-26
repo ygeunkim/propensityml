@@ -13,52 +13,67 @@
 #'  \item "SVM" - \code{\link{ps_svm}}
 #' }
 #' @param var The name of the propensity score column.
+#' @param mc Indicator column name for MC simulation if exists.
 #' @param ... Additional arguments of fitting functions
 #' @import data.table
 #' @export
-add_propensity <- function(data, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), var = "propensity", ...) {
+add_propensity <- function(data, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), var = "propensity", mc = NULL, ...) {
   method <- match.arg(method)
+  if (is.data.table(data)) {
+    data <- copy(data)
+  } else {
+    data <- copy(data %>% data.table())
+  }
   if (!is.null(object)) {
-    # data[[var]] <- estimate_ps(object, ...)
-    data[,
-         (var) := estimate_ps(object, ...)]
-    data[]
+    data[[var]] <- estimate_ps(object, ...)
+    data
+    # data[,
+    #      (var) := estimate_ps(object, ...)]
+    # data[]
   } else {
     if (method == "logit") {
       # data[[var]] <-
       #   data %>%
       #   ps_glm(formula, data = ., ...) %>%
       #   estimate_ps()
+      # data
       data[,
            (var) := ps_glm(formula, data = .SD, ...) %>%
-             estimate_ps()]
+             estimate_ps(),
+           by = mc]
       data[]
     } else if (method == "rf") {
       # data[[var]] <-
       #   data %>%
       #   ps_rf(formula, data = ., ...) %>%
       #   estimate_ps()
+      # data
       data[,
-           (var) := ps_glm(formula, data = .SD, ...) %>%
-             estimate_ps()]
+           (var) := ps_rf(formula, data = .SD, ...) %>%
+             estimate_ps(),
+           by = mc]
       data[]
     } else if (method == "cart") {
       # data[[var]] <-
       #   data %>%
       #   ps_cart(formula, data = ., ...) %>%
       #   estimate_ps()
+      # data
       data[,
            (var) := ps_cart(formula, data = .SD, ...) %>%
-             estimate_ps()]
+             estimate_ps(),
+           by = mc]
       data[]
     } else if (method == "SVM") {
       # data[[var]] <-
       #   data %>%
       #   ps_svm(formula, data = ., ...) %>%
       #   estimate_ps()
+      # data
       data[,
            (var) := ps_svm(formula, data = .SD, ...) %>%
-             estimate_ps()]
+             estimate_ps(),
+           by = mc]
       data[]
     }
   }
@@ -83,23 +98,45 @@ add_propensity <- function(data, object = NULL, formula = NULL, method = c("logi
 #'  \item "cart" - \code{\link{ps_cart}}
 #'  \item "SVM" - \code{\link{ps_svm}}
 #' }
+#' @param mc Indicator column name for MC simulation if exists.
 #' @param ... Additional arguments of fitting functions
-#' @importFrom dplyr mutate summarise
-#' @importFrom rlang sym
+#' @import data.table
 #' @export
-compute_ipw <- function(data, treatment, trt_indicator = 1, outcome, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), ...) {
+compute_ipw <- function(data, treatment, trt_indicator = 1, outcome, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), mc = NULL, ...) {
+  if (is.data.table(data)) {
+    data <- copy(data)
+  } else {
+    data <- copy(data %>% data.table())
+  }
   data %>%
-    add_ipw_wt(treatment = treatment, trt_indicator = trt_indicator, object = object, formula = formula, method = method, ...) %>%
-    summarise(
-      IPW = mean(ipw_wt * !!sym(outcome))
-    )
+    add_ipw_wt(treatment = treatment, trt_indicator = trt_indicator, object = object, formula = formula, method = method, mc = mc, ...) %>%
+    .[,
+      .(IPW = mean(ipw_wt * get(outcome))),
+      by = mc]
+  # data %>%
+  #   add_ipw_wt(treatment = treatment, trt_indicator = trt_indicator, object = object, formula = formula, method = method, ...) %>%
+  #   summarise(
+  #     IPW = mean(ipw_wt * !!sym(outcome))
+  #   )
 }
 
-add_ipw_wt <- function(data, treatment, trt_indicator = 1, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), ...) {
+add_ipw_wt <- function(data, treatment, trt_indicator = 1, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), mc = NULL, ...) {
+  if (is.data.table(data)) {
+    data <- copy(data)
+  } else {
+    data <- copy(data %>% data.table())
+  }
   data %>%
-    add_propensity(object = object, formula = formula, method = method, ...) %>%
-    mutate(treatment = ifelse(!!sym(treatment) == trt_indicator, 1, 0)) %>%
-    mutate(ipw_wt = treatment / propensity - (1 - treatment) / (1 - propensity))
+    add_propensity(object = object, formula = formula, method = method, mc = mc, ...) %>%
+    .[,
+      treatment := ifelse(get(treatment) == trt_indicator, 1, 0)] %>%
+    .[,
+      ipw_wt := treatment / propensity - (1 - treatment) / (1 - propensity)] %>%
+    .[]
+  # data %>%
+  #   add_propensity(object = object, formula = formula, method = method, ...) %>%
+  #   mutate(treatment = ifelse(!!sym(treatment) == trt_indicator, 1, 0)) %>%
+  #   mutate(ipw_wt = treatment / propensity - (1 - treatment) / (1 - propensity))
 }
 
 #' Estimation of Stabilized Inverse Probability Weighting
@@ -119,21 +156,36 @@ add_ipw_wt <- function(data, treatment, trt_indicator = 1, object = NULL, formul
 #'  \item "cart" - \code{\link{ps_cart}}
 #'  \item "SVM" - \code{\link{ps_svm}}
 #' }
+#' @param mc Indicator column name for MC simulation if exists.
 #' @param ... Additional arguments of fitting functions
-#' @importFrom dplyr mutate group_by ungroup summarise
-#' @importFrom rlang sym
+#' @import data.table
 #' @export
-compute_sipw <- function(data, treatment, trt_indicator = 1, outcome, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), ...) {
+compute_sipw <- function(data, treatment, trt_indicator = 1, outcome, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), mc = NULL, ...) {
+  if (is.data.table(data)) {
+    data <- copy(data)
+  } else {
+    data <- copy(data %>% data.table())
+  }
   data %>%
-    add_ipw_wt(treatment = treatment, trt_indicator = trt_indicator, object = object, formula = formula, method = method, ...) %>%
-    group_by(treatment) %>%
-    mutate(sipw_wt = ipw_wt / sum(ipw_wt)) %>%
-    ungroup() %>%
-    summarise(
-      SIPW = sum(
-        treatment * sipw_wt * !!sym(outcome) - (1 - treatment) * sipw_wt * !!sym(outcome)
-      )
-    )
+    add_ipw_wt(treatment = treatment, trt_indicator = trt_indicator, object = object, formula = formula, method = method, mc = mc, ...) %>%
+    .[,
+      sipw_wt := ipw_wt / sum(ipw_wt),
+      by = treatment] %>%
+    .[,
+      .(
+        SIPW = sum(treatment * sipw_wt * get(outcome) - (1 - treatment) * sipw_wt * get(outcome))
+      ),
+      by = mc]
+  # data %>%
+  #   add_ipw_wt(treatment = treatment, trt_indicator = trt_indicator, object = object, formula = formula, method = method, ...) %>%
+  #   group_by(treatment) %>%
+  #   mutate(sipw_wt = ipw_wt / sum(ipw_wt)) %>%
+  #   ungroup() %>%
+  #   summarise(
+  #     SIPW = sum(
+  #       treatment * sipw_wt * !!sym(outcome) - (1 - treatment) * sipw_wt * !!sym(outcome)
+  #     )
+  #   )
 }
 
 

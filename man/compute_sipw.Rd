@@ -12,6 +12,7 @@ compute_sipw(
   object = NULL,
   formula = NULL,
   method = c("logit", "rf", "cart", "SVM"),
+  mc = NULL,
   ...
 )
 }
@@ -35,6 +36,8 @@ compute_sipw(
 \item "cart" - \code{\link{ps_cart}}
 \item "SVM" - \code{\link{ps_svm}}
 }}
+
+\item{mc}{Indicator column name for MC simulation if exists.}
 
 \item{...}{Additional arguments of fitting functions}
 }
