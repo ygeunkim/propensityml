@@ -27,7 +27,7 @@ compute_ipw(
 
 \item{object}{A \code{propmod} object if already fitted.}
 
-\item{formula}{If not, write a \link[stats]{formula} to be fitted.}
+\item{formula}{If not, write a \link[stats]{formula} to be fitted. Remember that you don't have to worry about group variable. \link[data.table]{.SD} do exclude \code{by}.}
 
 \item{method}{Estimating methods
 \itemize{

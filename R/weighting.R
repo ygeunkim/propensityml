@@ -4,7 +4,7 @@
 #' adds propensity score to a data frame
 #' @param data A data frame to be used.
 #' @param object A \code{propmod} object if already fitted.
-#' @param formula If not, write a \link[stats]{formula} to be fitted.
+#' @param formula If not, write a \link[stats]{formula} to be fitted. Remember that you don't have to worry about group variable. \link[data.table]{.SD} do exclude `by`.
 #' @param method Estimating methods
 #' \itemize{
 #'  \item "logit" - \code{\link{ps_glm}}
@@ -90,7 +90,7 @@ add_propensity <- function(data, object = NULL, formula = NULL, method = c("logi
 #' @param trt_indicator Value that indicates the unit is treated
 #' @param outcome Outcome variable name
 #' @param object A \code{propmod} object if already fitted.
-#' @param formula If not, write a \link[stats]{formula} to be fitted.
+#' @param formula If not, write a \link[stats]{formula} to be fitted. Remember that you don't have to worry about group variable. \link[data.table]{.SD} do exclude `by`.
 #' @param method Estimating methods
 #' \itemize{
 #'  \item "logit" - \code{\link{ps_glm}}
@@ -148,7 +148,7 @@ add_ipw_wt <- function(data, treatment, trt_indicator = 1, object = NULL, formul
 #' @param trt_indicator Value that indicates the unit is treated
 #' @param outcome Outcome variable name
 #' @param object A \code{propmod} object if already fitted.
-#' @param formula If not, write a \link[stats]{formula} to be fitted.
+#' @param formula If not, write a \link[stats]{formula} to be fitted. Remember that you don't have to worry about group variable. \link[data.table]{.SD} do exclude `by`.
 #' @param method Estimating methods
 #' \itemize{
 #'  \item "logit" - \code{\link{ps_glm}}
