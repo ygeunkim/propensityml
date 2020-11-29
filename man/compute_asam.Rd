@@ -4,7 +4,19 @@
 \alias{compute_asam}
 \title{Average Standardized Absolute Mean Distance}
 \usage{
-compute_asam(data, treatment, trt_indicator = 1, outcome)
+compute_asam(
+  data,
+  treatment,
+  trt_indicator = 1,
+  outcome,
+  exclude = NULL,
+  object = NULL,
+  formula = NULL,
+  method = c("logit", "rf", "cart", "SVM"),
+  mc = NULL,
+  parallel = FALSE,
+  ...
+)
 }
 \arguments{
 \item{data}{data}
@@ -14,6 +26,24 @@ compute_asam(data, treatment, trt_indicator = 1, outcome)
 \item{trt_indicator}{value that indicates the unit is treated, e.g. 1 or TRUE}
 
 \item{outcome}{outcome variable included in the data. It should be specified because it is not covariate.}
+
+\item{exclude}{Additional columns to exlude}
+
+\item{object}{A \code{propmod} object if already fitted.}
+
+\item{formula}{If not, write a \link[stats]{formula} to be fitted. Remember that you don't have to worry about group variable. \link[data.table]{.SD} do exclude \code{by}.}
+
+\item{method}{Estimating methods
+\itemize{
+\item "logit" - \code{\link{ps_glm}}
+\item "rf" - \code{\link{ps_rf}}
+\item "cart" - \code{\link{ps_cart}}
+\item "SVM" - \code{\link{ps_svm}}
+}}
+
+\item{mc}{Indicator column name for MC simulation if exists.}
+
+\item{...}{Additional arguments of fitting functions}
 }
 \description{
 computes average standardized absolute mean distance (ASAM)

@@ -59,7 +59,7 @@ The most simplest scenario, i.e. additivity and linearity model:
 ```{r}
 (fit_rf <- 
   x %>% 
-  ps_rf(exposure ~ . -outcome_prob, data = .))
+  ps_rf(exposure ~ . - y - exposure_prob, data = .))
 ```
 
 We have defined the class named `propmod` for some usage.

@@ -9,7 +9,8 @@ compute_balance(
   col_name = "balance",
   treatment,
   trt_indicator = 1,
-  outcome
+  outcome,
+  exclude = NULL
 )
 }
 \arguments{
@@ -22,6 +23,8 @@ compute_balance(
 \item{trt_indicator}{value that indicates the unit is treated, e.g. 1 or TRUE}
 
 \item{outcome}{outcome variable included in the data. It should be specified because it is not covariate.}
+
+\item{exclude}{Additional columns to exlude}
 }
 \description{
 gives covariate balance summary

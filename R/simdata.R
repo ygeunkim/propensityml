@@ -243,19 +243,14 @@ sim_outcome <- function(n, covmat = build_covariate(), scenario = LETTERS[1:7],
   x[,
     exposure_prob := (1 + exp(-exposure_prob))^(-1)] %>%
     .[,
-      `:=`(
-        exposure = ifelse(exposure_prob > runif(n), 1, 0),
-        exposure_prob = NULL
-      )] %>%
+      exposure := ifelse(exposure_prob > runif(n), 1, 0)] %>%
     .[,
-      outcome_prob := Reduce("+", c(a, gam) * .SD[, .SD, .SDcols = c(confounder, out_cov, "exposure")])] %>%
-    .[,
-      outcome_prob := (1 + exp(-outcome_prob))^(-1)]
+      y := Reduce("+", c(a, gam) * .SD[, .SD, .SDcols = c(confounder, out_cov, "exposure")])]
   bin_cols <- c("exposure", paste0("w", c(1, 3, 5, 6, 8, 9)))
   x[,
     (bin_cols) := lapply(.SD, factor),
     .SDcols = bin_cols]
-  x[, .SD, .SDcols = c(paste0("w", 1:10), "exposure", "outcome_prob")]
+  x[, .SD, .SDcols = c(paste0("w", 1:10), "exposure", "y", "exposure_prob")]
 }
 
 #' Simulation Setting
