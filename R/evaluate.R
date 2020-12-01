@@ -65,12 +65,6 @@ tidy_moment <- function(data, treatment, with_melt = NULL, col_exclude) {
 #'  \item "SVM" - \code{\link{ps_svm}}
 #' }
 #' @param weighting Weighting methods, IPW or SIPW
-#' @param mc Indicator column name for group if exists, e.g. c("mcname", "scenario")
-#' \itemize{
-#'  \item MC simulation
-#'  \item Scenario
-#' }
-#' @param parallel parallelize some operation
 #' @param ... Additional arguments of fitting functions
 #' @references Lee, B. K., Lessler, J., & Stuart, E. A. (2010). \emph{Improving propensity score weighting using machine learning. Statistics in Medicine}. Statistics in Medicine, 29(3), 337-346. \url{https://doi.org/10.1002/sim.3782}
 #' @details
@@ -82,8 +76,7 @@ tidy_moment <- function(data, treatment, with_melt = NULL, col_exclude) {
 #' @import data.table foreach
 #' @export
 compute_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = NULL,
-                         object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"),
-                         weighting = c("IPW", "SIPW"), mc = NULL, parallel = FALSE, ...) {
+                         object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), weighting = c("IPW", "SIPW")) {
   if (is.data.table(data)) {
     data <- copy(data)
   } else {
@@ -128,47 +121,119 @@ compute_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = 
   # weighing----------------------------------------
   for (col in covariate_name) set(data, j = col, value = data[[col]] * data[[weighting]])
   # balance dt--------------------------------------
-  if (!is.null(mc)) {
-    if (parallel) {
-      balance_dt <- foreach(mc_id = data[,get(mc)] %>% unique(), .combine = rbind) %dopar% {
-        data[get(mc) == mc_id] %>%
-          .[, .SD, .SDcols = -mc] %>%
-          compute_balance(
-            treatment = treatment,
-            trt_indicator = trt_indicator,
-            outcome = outcome,
-            exclude = c(exclude, weighting)
-          ) %>%
-          .[,
-            .(asam = mean(balance))] %>%
-          .[,
-            MC := mc_id]
-      }
-    } else {
-      balance_dt <- foreach(mc_id = data[,get(mc)] %>% unique(), .combine = rbind) %do% {
-        data[get(mc) == mc_id] %>%
-          .[, .SD, .SDcols = -mc] %>%
-          compute_balance(
-            treatment = treatment,
-            trt_indicator = trt_indicator,
-            outcome = outcome,
-            exclude = c(exclude, weighting)
-          ) %>%
-          .[,
-            .(asam = mean(balance))] %>%
-          .[,
-            MC := mc_id]
-      }
-    }
-    return(balance_dt)
-  }
-  balance_dt <-
-    data %>%
+  data %>%
     compute_balance(
       treatment = treatment,
       trt_indicator = trt_indicator,
       outcome = outcome,
       exclude = c(exclude, weighting)
-    )
-  balance_dt[, .(asam = mean(balance))]
+    ) %>%
+    .[,
+      .(asam = mean(abs(balance)))]
 }
+
+#' ASAM by group
+#'
+#' @description
+#' computes average standardized absolute mean distance (ASAM) in MC setting
+#' @param data data
+#' @param treatment column name of treatment
+#' @param trt_indicator value that indicates the unit is treated, e.g. 1 or TRUE
+#' @param outcome outcome variable included in the data. It should be specified because it is not covariate.
+#' @param exclude Additional columns to exlude
+#' @param object A \code{propmod} object if already fitted.
+#' @param formula If not, write a \link[stats]{formula} to be fitted. Remember that you don't have to worry about group variable. \link[data.table]{.SD} do exclude `by`.
+#' @param method Estimating methods
+#' \itemize{
+#'  \item "logit" - \code{\link{ps_glm}}
+#'  \item "rf" - \code{\link{ps_rf}}
+#'  \item "cart" - \code{\link{ps_cart}}
+#'  \item "SVM" - \code{\link{ps_svm}}
+#' }
+#' @param weighting Weighting methods, IPW or SIPW
+#' @param mc_col Indicator column name for MC simulation if exists
+#' @param sc_col Indicator column name for various scenarios if exists
+#' @param parallel parallelize some operation
+#' @param mc_core The number of cores to use for MC simulation
+#' @param ... Additional arguments of fitting functions
+#' @references Lee, B. K., Lessler, J., & Stuart, E. A. (2010). \emph{Improving propensity score weighting using machine learning. Statistics in Medicine}. Statistics in Medicine, 29(3), 337-346. \url{https://doi.org/10.1002/sim.3782}
+#' @details
+#' For each covariate,
+#' compute absolute (standardized difference of means between treatment and control groups), and take average.
+#' Denote that standardization is done by sd of treatment group covariates.
+#'
+#' Lower ASAM means that treatment and control groups are more similar w.r.t. the given covariates.
+#' @import data.table foreach
+#' @importFrom parallel mclapply
+#' @export
+mc_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = NULL,
+                    object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"),
+                    weighting = c("IPW", "SIPW"), mc_col, sc_col = NULL, parallel = FALSE, mc_core = 1, ...) {
+  if (missing(mc_col)) stop("Use this function only in MC simulation setting")
+  if (!is.null(sc_col)) {
+    if (!parallel) {
+      # %do%
+      balance_dt <- foreach(sc_id = data[,get(sc_col)] %>% unique(), .combine = rbind) %do% {
+        sc_dt <- copy(data[get(sc_col) == sc_id])
+        # Average ASAM for each MC-------------------------------------------------
+        mclapply(
+          sc_dt[,get(mc_col)] %>% unique(),
+          function(id) {
+            compute_asam(
+              sc_dt[get(mc_col) == id],
+              treatment = treatment, trt_indicator = trt_indicator, outcome = outcome, exclude = c(exclude, mc_col),
+              object = object, formula = formula, method = method, weighting = weighting
+            )
+          },
+          mc.cores = mc_core
+        ) %>%
+          rbindlist() %>%
+          .[,
+            `:=`(
+              MC = sc_dt[,get(mc_col)] %>% unique(),
+              SC = sc_id
+            )]
+      }
+    } else {
+      # %dopar%
+      balance_dt <- foreach(sc_id = data[,get(sc_col)] %>% unique(), .combine = rbind) %dopar% {
+        sc_dt <- copy(data[get(sc_col) == sc_id])
+        # Average ASAM for each MC-------------------------------------------------
+        mclapply(
+          sc_dt[,get(mc_col)] %>% unique(),
+          function(id) {
+            compute_asam(
+              sc_dt[get(mc_col) == id],
+              treatment = treatment, trt_indicator = trt_indicator, outcome = outcome, exclude = c(exclude, mc_col),
+              object = object, formula = formula, method = method, weighting = weighting
+            )
+          },
+          mc.cores = mc_core
+        ) %>%
+          rbindlist() %>%
+          .[,
+            `:=`(
+              MC = sc_dt[,get(mc_col)] %>% unique(),
+              SC = sc_id
+            )]
+      }
+    }
+    return(balance_dt)
+  }
+  mclapply(
+    data[,get(mc_col)] %>% unique(),
+    function(id) {
+      compute_asam(
+        data[get(mc_col) == id],
+        treatment = treatment, trt_indicator = trt_indicator, outcome = outcome, exclude = c(exclude, mc_col),
+        object = object, formula = formula, method = method, weighting = weighting
+      )
+    },
+    mc.cores = mc_core
+  ) %>%
+    rbindlist() %>%
+    .[,
+      MC := data[,get(mc_col)] %>% unique()] %>%
+    .[]
+}
+
