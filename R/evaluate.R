@@ -76,7 +76,7 @@ tidy_moment <- function(data, treatment, with_melt = NULL, col_exclude) {
 #' @import data.table foreach
 #' @export
 compute_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = NULL,
-                         object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), weighting = c("IPW", "SIPW")) {
+                         object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), weighting = c("IPW", "SIPW"), ...) {
   if (is.data.table(data)) {
     data <- copy(data)
   } else {
@@ -89,22 +89,18 @@ compute_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = 
       data %>%
       compute_ipw(
         treatment = treatment, trt_indicator = trt_indicator, outcome = outcome,
-        object = object, formula = formula, method = method, mc = mc, ...
+        object = object, formula = formula, method = method, ...
       )
   } else { # sipw
     wt <-
       data %>%
       compute_sipw(
         treatment = treatment, trt_indicator = trt_indicator, outcome = outcome,
-        object = object, formula = formula, method = method, mc = mc, ...
+        object = object, formula = formula, method = method, ...
       )
   }
-  if (!is.null(mc)) {
-    data <- merge(data, wt, by = mc)
-  } else {
-    data <- data[,
-                 (weighting) := wt]
-  }
+  data[,
+       (weighting) := wt]
   # Balancing--------------------------------------------------------------
   wt_vars <- paste0(weighting, c(".mean", ".var"))
   left_formula <- paste0(c(treatment, "variable", wt_vars), collapse = "+")
@@ -112,7 +108,7 @@ compute_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = 
   formul <- as.formula(formul)
   # covariate column names--------------------------
   covariate_name <- names(data)
-  covariate_name <- setdiff(covariate_name, c(outcome, treatment, exclude, mc, weighting))
+  covariate_name <- setdiff(covariate_name, c(outcome, treatment, exclude, weighting))
   # covariate columns that are factor---------------
   cols_fct <- sapply(data, class)[covariate_name]
   cols_fct <- names(cols_fct[cols_fct == "factor"])
@@ -170,19 +166,21 @@ mc_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = NULL,
                     object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"),
                     weighting = c("IPW", "SIPW"), mc_col, sc_col = NULL, parallel = FALSE, mc_core = 1, ...) {
   if (missing(mc_col)) stop("Use this function only in MC simulation setting")
+  mc_list <- data[, get(mc_col)] %>% unique()
   if (!is.null(sc_col)) {
+    # Multiple scenarios------------------------------------------------------------------------
+    sc_list <- data[, get(sc_col)] %>% unique()
     if (!parallel) {
-      # %do%
-      balance_dt <- foreach(sc_id = data[,get(sc_col)] %>% unique(), .combine = rbind) %do% {
-        sc_dt <- copy(data[get(sc_col) == sc_id])
-        # Average ASAM for each MC-------------------------------------------------
+      balance_dt <- foreach(sc_id = sc_list, .combine = rbind) %do% {
+        sc_dt <- copy(data[get(sc_col) == sc_id, .SD, .SDcols = -sc_col])
+        # Average ASAM for each MC-------------------
         mclapply(
-          sc_dt[,get(mc_col)] %>% unique(),
+          mc_list,
           function(id) {
             compute_asam(
               sc_dt[get(mc_col) == id],
               treatment = treatment, trt_indicator = trt_indicator, outcome = outcome, exclude = c(exclude, mc_col),
-              object = object, formula = formula, method = method, weighting = weighting
+              object = object, formula = formula, method = method, weighting = weighting, ...
             )
           },
           mc.cores = mc_core
@@ -192,20 +190,20 @@ mc_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = NULL,
             `:=`(
               MC = sc_dt[,get(mc_col)] %>% unique(),
               SC = sc_id
-            )]
+            )] %>%
+          .[]
       }
     } else {
-      # %dopar%
+      # parallel with foreach-----------------------------------------------------
       balance_dt <- foreach(sc_id = data[,get(sc_col)] %>% unique(), .combine = rbind) %dopar% {
-        sc_dt <- copy(data[get(sc_col) == sc_id])
-        # Average ASAM for each MC-------------------------------------------------
+        sc_dt <- copy(data[get(sc_col) == sc_id, .SD, .SDcols = -sc_col])
         mclapply(
-          sc_dt[,get(mc_col)] %>% unique(),
+          mc_list,
           function(id) {
             compute_asam(
               sc_dt[get(mc_col) == id],
               treatment = treatment, trt_indicator = trt_indicator, outcome = outcome, exclude = c(exclude, mc_col),
-              object = object, formula = formula, method = method, weighting = weighting
+              object = object, formula = formula, method = method, weighting = weighting, ...
             )
           },
           mc.cores = mc_core
@@ -215,18 +213,25 @@ mc_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = NULL,
             `:=`(
               MC = sc_dt[,get(mc_col)] %>% unique(),
               SC = sc_id
-            )]
+            )] %>%
+          .[]
       }
     }
-    return(balance_dt)
+    # return the result of various scenario--------------
+    return(
+      balance_dt[,
+                 .(asam = mean(asam)),
+                 by = SC]
+    )
   }
+  # One scenario-------------------------------------------------------------------------------
   mclapply(
     data[,get(mc_col)] %>% unique(),
     function(id) {
       compute_asam(
         data[get(mc_col) == id],
         treatment = treatment, trt_indicator = trt_indicator, outcome = outcome, exclude = c(exclude, mc_col),
-        object = object, formula = formula, method = method, weighting = weighting
+        object = object, formula = formula, method = method, weighting = weighting, ...
       )
     },
     mc.cores = mc_core
@@ -234,6 +239,7 @@ mc_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = NULL,
     rbindlist() %>%
     .[,
       MC := data[,get(mc_col)] %>% unique()] %>%
-    .[]
+    .[,
+      .(asam = mean(asam))]
 }
 

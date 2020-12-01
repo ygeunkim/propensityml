@@ -13,7 +13,8 @@ compute_asam(
   object = NULL,
   formula = NULL,
   method = c("logit", "rf", "cart", "SVM"),
-  weighting = c("IPW", "SIPW")
+  weighting = c("IPW", "SIPW"),
+  ...
 )
 }
 \arguments{
