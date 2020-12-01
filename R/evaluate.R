@@ -64,7 +64,13 @@ tidy_moment <- function(data, treatment, with_melt = NULL, col_exclude) {
 #'  \item "cart" - \code{\link{ps_cart}}
 #'  \item "SVM" - \code{\link{ps_svm}}
 #' }
-#' @param mc Indicator column name for MC simulation if exists.
+#' @param weighting Weighting methods, IPW or SIPW
+#' @param mc Indicator column name for group if exists, e.g. c("mcname", "scenario")
+#' \itemize{
+#'  \item MC simulation
+#'  \item Scenario
+#' }
+#' @param parallel parallelize some operation
 #' @param ... Additional arguments of fitting functions
 #' @references Lee, B. K., Lessler, J., & Stuart, E. A. (2010). \emph{Improving propensity score weighting using machine learning. Statistics in Medicine}. Statistics in Medicine, 29(3), 337-346. \url{https://doi.org/10.1002/sim.3782}
 #' @details
@@ -75,66 +81,94 @@ tidy_moment <- function(data, treatment, with_melt = NULL, col_exclude) {
 #' Lower ASAM means that treatment and control groups are more similar w.r.t. the given covariates.
 #' @import data.table foreach
 #' @export
-compute_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = NULL, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), mc = NULL, parallel = FALSE, ...) {
+compute_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = NULL,
+                         object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"),
+                         weighting = c("IPW", "SIPW"), mc = NULL, parallel = FALSE, ...) {
   if (is.data.table(data)) {
     data <- copy(data)
   } else {
     data <- copy(data %>% data.table())
   }
-  left_formula <- paste0(c(treatment, "variable", "iptw.mean", "iptw.var"), collapse = "+")
+  # IPW or SIPW------------------------
+  weighting <- match.arg(weighting)
+  if (weighting == "IPW") { # ipw
+    wt <-
+      data %>%
+      compute_ipw(
+        treatment = treatment, trt_indicator = trt_indicator, outcome = outcome,
+        object = object, formula = formula, method = method, mc = mc, ...
+      )
+  } else { # sipw
+    wt <-
+      data %>%
+      compute_sipw(
+        treatment = treatment, trt_indicator = trt_indicator, outcome = outcome,
+        object = object, formula = formula, method = method, mc = mc, ...
+      )
+  }
+  if (!is.null(mc)) {
+    data <- merge(data, wt, by = mc)
+  } else {
+    data <- data[,
+                 (weighting) := wt]
+  }
+  # Balancing--------------------------------------------------------------
+  wt_vars <- paste0(weighting, c(".mean", ".var"))
+  left_formula <- paste0(c(treatment, "variable", wt_vars), collapse = "+")
   formul <- paste0(c(left_formula, "moment"), collapse = "~")
   formul <- as.formula(formul)
-  data <-
-    data %>%
-    add_iptw(treatment = treatment, trt_indicator = trt_indicator, outcome = outcome, object = object, formula = formula, method = method, mc = mc, ...)
-  if(!is.null(mc)) {
-    if (!parallel) {
-      asam_dt <-
-        foreach(mc_id = data[[mc]] %>% unique(), .combine = rbind) %do% {
-          dt <- copy(data)
-          dt[get(mc) == mc_id] %>%
-            tidy_moment(treatment = treatment, with_melt = c("iptw.mean", "iptw.var"), col_exclude = c(outcome, exclude)) %>%
-            .[,
-              difference := value - iptw.mean] %>%
-            .[,
-              .(balance = diff(difference[moment == "mean"]) / sqrt( sum(value[moment == "var"]) / 2 )),
-              by = variable] %>%
-            .[,
-              id := mc_id] %>%
-            .[]
-        }
+  # covariate column names--------------------------
+  covariate_name <- names(data)
+  covariate_name <- setdiff(covariate_name, c(outcome, treatment, exclude, mc, weighting))
+  # covariate columns that are factor---------------
+  cols_fct <- sapply(data, class)[covariate_name]
+  cols_fct <- names(cols_fct[cols_fct == "factor"])
+  # change to numeric-------------------------------
+  for (col in cols_fct) set(data, j = col, value = as.numeric(levels(data[[col]]))[data[[col]]])
+  # weighing----------------------------------------
+  for (col in covariate_name) set(data, j = col, value = data[[col]] * data[[weighting]])
+  # balance dt--------------------------------------
+  if (!is.null(mc)) {
+    if (parallel) {
+      balance_dt <- foreach(mc_id = data[,get(mc)] %>% unique(), .combine = rbind) %dopar% {
+        data[get(mc) == mc_id] %>%
+          .[, .SD, .SDcols = -mc] %>%
+          compute_balance(
+            treatment = treatment,
+            trt_indicator = trt_indicator,
+            outcome = outcome,
+            exclude = c(exclude, weighting)
+          ) %>%
+          .[,
+            .(asam = mean(balance))] %>%
+          .[,
+            MC := mc_id]
+      }
     } else {
-      asam_dt <-
-        foreach(mc_id = data[[mc]] %>% unique(), .combine = rbind) %do% {
-          dt <- copy(data)
-          dt[get(mc) == mc_id] %>%
-            tidy_moment(treatment = treatment, with_melt = c("iptw.mean", "iptw.var"), col_exclude = c(outcome, exclude)) %>%
-            .[,
-              difference := value - iptw.mean] %>%
-            .[,
-              .(balance = diff(difference[moment == "mean"]) / sqrt( sum(value[moment == "var"]) / 2 )),
-              by = variable] %>%
-            .[,
-              id := mc_id] %>%
-            .[]
-        }
+      balance_dt <- foreach(mc_id = data[,get(mc)] %>% unique(), .combine = rbind) %do% {
+        data[get(mc) == mc_id] %>%
+          .[, .SD, .SDcols = -mc] %>%
+          compute_balance(
+            treatment = treatment,
+            trt_indicator = trt_indicator,
+            outcome = outcome,
+            exclude = c(exclude, weighting)
+          ) %>%
+          .[,
+            .(asam = mean(balance))] %>%
+          .[,
+            MC := mc_id]
+      }
     }
-    return(
-      asam_dt[,
-              (asam = mean(balance)),
-              by = mc_id]
-    )
+    return(balance_dt)
   }
-  data %>%
-    tidy_moment(treatment = treatment, with_melt = c("iptw.mean", "iptw.var"), col_exclude = c(outcome, exclude)) %>%
-    .[,
-      difference := value - iptw.mean] %>%
-    .[,
-      .(balance = diff(difference[moment == "mean"]) / sqrt( sum(value[moment == "var"]) / 2 )),
-      by = variable]
-  # data %>%
-  #   compute_balance(col_name = "balance", treatment = treatment, trt_indicator = trt_indicator, outcome = outcome) %>%
-  #   .[, balance] %>%
-  #   abs() %>%
-  #   mean()
+  balance_dt <-
+    data %>%
+    compute_balance(
+      treatment = treatment,
+      trt_indicator = trt_indicator,
+      outcome = outcome,
+      exclude = c(exclude, weighting)
+    )
+  balance_dt[, .(asam = mean(balance))]
 }

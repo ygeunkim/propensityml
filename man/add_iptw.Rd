@@ -12,7 +12,6 @@ add_iptw(
   object = NULL,
   formula = NULL,
   method = c("logit", "rf", "cart", "SVM"),
-  weighting = c("IPW", "SIPW"),
   mc = NULL,
   ...
 )
@@ -23,6 +22,8 @@ add_iptw(
 \item{treatment}{Treatment variable name}
 
 \item{trt_indicator}{Value that indicates the unit is treated}
+
+\item{outcome}{Outcome variable name}
 
 \item{object}{A \code{propmod} object if already fitted.}
 
@@ -35,8 +36,6 @@ add_iptw(
 \item "cart" - \code{\link{ps_cart}}
 \item "SVM" - \code{\link{ps_svm}}
 }}
-
-\item{weighting}{IPW or SIPW}
 
 \item{mc}{Indicator column name for MC simulation if exists.}
 

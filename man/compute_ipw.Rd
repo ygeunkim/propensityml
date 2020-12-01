@@ -37,7 +37,11 @@ compute_ipw(
 \item "SVM" - \code{\link{ps_svm}}
 }}
 
-\item{mc}{Indicator column name for MC simulation if exists.}
+\item{mc}{Indicator column name for group if exists, e.g. c("mcname", "scenario")
+\itemize{
+\item MC simulation
+\item Scenario
+}}
 
 \item{...}{Additional arguments of fitting functions}
 }

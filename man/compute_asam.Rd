@@ -13,6 +13,7 @@ compute_asam(
   object = NULL,
   formula = NULL,
   method = c("logit", "rf", "cart", "SVM"),
+  weighting = c("IPW", "SIPW"),
   mc = NULL,
   parallel = FALSE,
   ...
@@ -41,7 +42,15 @@ compute_asam(
 \item "SVM" - \code{\link{ps_svm}}
 }}
 
-\item{mc}{Indicator column name for MC simulation if exists.}
+\item{weighting}{Weighting methods, IPW or SIPW}
+
+\item{mc}{Indicator column name for group if exists, e.g. c("mcname", "scenario")
+\itemize{
+\item MC simulation
+\item Scenario
+}}
+
+\item{parallel}{parallelize some operation}
 
 \item{...}{Additional arguments of fitting functions}
 }
