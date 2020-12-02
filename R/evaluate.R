@@ -74,6 +74,7 @@ tidy_moment <- function(data, treatment, with_melt = NULL, col_exclude) {
 #'
 #' Lower ASAM means that treatment and control groups are more similar w.r.t. the given covariates.
 #' @import data.table foreach
+#' @importFrom stats as.formula
 #' @export
 compute_asam <- function(data, treatment, trt_indicator = 1, outcome, exclude = NULL,
                          object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), weighting = c("IPW", "SIPW"), ...) {

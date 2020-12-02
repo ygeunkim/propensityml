@@ -8,7 +8,6 @@ add_iptw(
   data,
   treatment,
   trt_indicator = 1,
-  outcome,
   object = NULL,
   formula = NULL,
   method = c("logit", "rf", "cart", "SVM"),
@@ -22,8 +21,6 @@ add_iptw(
 \item{treatment}{Treatment variable name}
 
 \item{trt_indicator}{Value that indicates the unit is treated}
-
-\item{outcome}{Outcome variable name}
 
 \item{object}{A \code{propmod} object if already fitted.}
 
@@ -46,9 +43,11 @@ fits weighted regression of outcome on treatment
 }
 \details{
 This functions add a column by
-\deqn{\frac{A}{\hat{e}_i} + \frac{1- A}{1 - \hat{e}_i}}
-where \eqn{A} is the inverse estimated probabilities of treatment.
+\deqn{\frac{trt_i}{\hat{e}_i} + \frac{1- trt_i}{1 - \hat{e}_i}}
 }
 \references{
 Pirracchio, R., Petersen, M. L., & Laan, M. van der. (2015). \emph{Improving Propensity Score Estimators’ Robustness to Model Misspecification Using Super Learner}. American Journal of Epidemiology, 181(2), 108–119. \url{https://doi.org/10.1093/aje/kwu253}
+}
+\seealso{
+\code{\link{add_propensity}}
 }

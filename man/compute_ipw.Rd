@@ -48,6 +48,3 @@ compute_ipw(
 \description{
 estimates inverse probability weighting (IPW) based on propensity score estimates
 }
-\seealso{
-\code{\link{add_ipw_wt}}
-}
