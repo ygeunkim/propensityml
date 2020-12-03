@@ -10,7 +10,9 @@ add_propensity(
   formula = NULL,
   method = c("logit", "rf", "cart", "SVM"),
   var = "propensity",
-  mc = NULL,
+  mc_col = NULL,
+  sc_col = NULL,
+  parallel = FALSE,
   ...
 )
 }
@@ -31,7 +33,11 @@ add_propensity(
 
 \item{var}{The name of the propensity score column.}
 
-\item{mc}{Indicator column name for MC simulation if exists.}
+\item{mc_col}{Indicator column name for MC simulation if exists}
+
+\item{sc_col}{Indicator column name for various scenarios if exists}
+
+\item{parallel}{parallelize some operation}
 
 \item{...}{Additional arguments of fitting functions}
 }

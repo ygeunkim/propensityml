@@ -265,6 +265,7 @@ sim_outcome <- function(n, covmat = build_covariate(), scenario = LETTERS[1:7],
 #' @param a coefficients in outcome model
 #' @param gam coefficient of exposure
 #' @param parallel parallelize? By default, `FALSE`.
+#' @param mc_core The number of cores to use for MC simulation
 #' @references Setoguchi, S., Schneeweiss, S., Brookhart, M. A., Glynn, R. J., & Cook, E. F. (2008). \emph{Evaluating uses of data mining techniques in propensity score estimation: a simulation study}. Pharmacoepidemiology and Drug Safety, 17(6), 546–555 \url{https://doi.org/10.1002/pds.1555}
 #' @references Lee, B. K., Lessler, J., & Stuart, E. A. (2010). \emph{Improving propensity score weighting using machine learning. Statistics in Medicine}. Statistics in Medicine, 29(3), 337-346. \url{https://doi.org/10.1002/sim.3782}
 #' @details
@@ -272,19 +273,48 @@ sim_outcome <- function(n, covmat = build_covariate(), scenario = LETTERS[1:7],
 #' \code{mcname} represents the index of the replicate.
 #' @import data.table
 #' @import foreach
+#' @importFrom parallel mclapply
 #' @export
 mc_setoguchi <- function(N, n_dat, covmat = build_covariate(), scenario = LETTERS[1:7],
                          b = c(0, .8, -.25, .6, -.4, -.8, -.5, .7),
                          a = c(-3.85, .3, -.36, -73, -.2, .71, -.19, .26),
-                         gam = -.4, parallel = FALSE) {
+                         gam = -.4, parallel = FALSE, mc_core = 1) {
   if (parallel) {
-    mc_list <- foreach(i = 1:N, .combine = rbind) %dopar% {
-      sim_outcome(n_dat, covmat, scenario, b, a, gam)[, mcname := i]
+    mc_list <- foreach(s = scenario, .combine = rbind) %dopar% {
+      mclapply(
+        1:N,
+        function(id) {
+          sim_outcome(n_dat, covmat, s, b, a, gam) %>%
+            .[,
+              mcname := id]
+        },
+        mc.cores = mc_core
+      ) %>%
+        rbindlist() %>%
+        .[,
+          scenario := s]
     }
+    # mc_list <- foreach(i = 1:N, .combine = rbind) %dopar% {
+    #   sim_outcome(n_dat, covmat, scenario, b, a, gam)[, mcname := i]
+    # }
   } else {
-    mc_list <- foreach(i = 1:N, .combine = rbind) %do% {
-      sim_outcome(n_dat, covmat, scenario, b, a, gam)[, mcname := i]
+    mc_list <- foreach(s = scenario, .combine = rbind) %do% {
+      mclapply(
+        1:N,
+        function(id) {
+          sim_outcome(n_dat, covmat, s, b, a, gam) %>%
+            .[,
+              mcname := id]
+        },
+        mc.cores = mc_core
+      ) %>%
+        rbindlist() %>%
+        .[,
+          scenario := s]
     }
+    # mc_list <- foreach(i = 1:N, .combine = rbind) %do% {
+    #   sim_outcome(n_dat, covmat, scenario, b, a, gam)[, mcname := i]
+    # }
   }
   mc_list
 }

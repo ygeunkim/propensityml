@@ -11,7 +11,9 @@ add_iptw(
   object = NULL,
   formula = NULL,
   method = c("logit", "rf", "cart", "SVM"),
-  mc = NULL,
+  mc_col = NULL,
+  sc_col = NULL,
+  parallel = FALSE,
   ...
 )
 }
@@ -34,7 +36,11 @@ add_iptw(
 \item "SVM" - \code{\link{ps_svm}}
 }}
 
-\item{mc}{Indicator column name for MC simulation if exists.}
+\item{mc_col}{Indicator column name for MC simulation if exists}
+
+\item{sc_col}{Indicator column name for various scenarios if exists}
+
+\item{parallel}{parallelize some operation}
 
 \item{...}{Additional arguments of fitting functions}
 }

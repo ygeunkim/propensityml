@@ -14,6 +14,9 @@ compute_asam(
   formula = NULL,
   method = c("logit", "rf", "cart", "SVM"),
   weighting = c("IPW", "SIPW"),
+  mc_col = NULL,
+  sc_col = NULL,
+  parallel = FALSE,
   ...
 )
 }
@@ -41,6 +44,12 @@ compute_asam(
 }}
 
 \item{weighting}{Weighting methods, IPW or SIPW}
+
+\item{mc_col}{Indicator column name for MC simulation if exists}
+
+\item{sc_col}{Indicator column name for various scenarios if exists}
+
+\item{parallel}{parallelize some operation}
 
 \item{...}{Additional arguments of fitting functions}
 }

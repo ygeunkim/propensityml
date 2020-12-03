@@ -12,7 +12,8 @@ mc_setoguchi(
   b = c(0, 0.8, -0.25, 0.6, -0.4, -0.8, -0.5, 0.7),
   a = c(-3.85, 0.3, -0.36, -73, -0.2, 0.71, -0.19, 0.26),
   gam = -0.4,
-  parallel = FALSE
+  parallel = FALSE,
+  mc_core = 1
 )
 }
 \arguments{
@@ -31,6 +32,8 @@ mc_setoguchi(
 \item{gam}{coefficient of exposure}
 
 \item{parallel}{parallelize? By default, \code{FALSE}.}
+
+\item{mc_core}{The number of cores to use for MC simulation}
 }
 \description{
 generates multiple sets of data-set
