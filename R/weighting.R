@@ -286,7 +286,7 @@ compute_sipw <- function(data, treatment, trt_indicator = 1, outcome, object = N
       by = treatment] %>%
     .[,
       .(
-        SIPW = sum(treatment * sipw_wt * get(outcome) - (1 - treatment) * sipw_wt * get(outcome))
+        SIPW = sum(sipw_wt * get(outcome) - sipw_wt * get(outcome))
       ),
       by = mc]
 }
