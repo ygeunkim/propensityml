@@ -331,8 +331,10 @@ add_iptw <- function(data, treatment, trt_indicator = 1, object = NULL, formula 
       treatment := ifelse(get(treatment) == trt_indicator, 1, 0)] %>%
     .[,
       iptw := treatment / propensity + (1 - treatment) / (1 - propensity)] %>%
+    # .[,
+    #   `:=`(treatment = NULL, propensity = NULL)] %>%
     .[,
-      `:=`(treatment = NULL, propensity = NULL)] %>%
+      treatment := NULL] %>%
     .[]
 }
 
