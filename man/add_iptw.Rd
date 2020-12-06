@@ -2,7 +2,7 @@
 % Please edit documentation in R/weighting.R
 \name{add_iptw}
 \alias{add_iptw}
-\title{Inverse Probability Treatment Weighting}
+\title{Treatment Effect Estimation Using Propensity Scores}
 \usage{
 add_iptw(
   data,
@@ -45,13 +45,17 @@ add_iptw(
 \item{...}{Additional arguments of fitting functions}
 }
 \description{
-fits weighted regression of outcome on treatment
+estimates treatment effect based on ps estimation (e.g. inverse probability treatment weighting)
 }
 \details{
-This functions add a column by
+This functions add columns by
 \deqn{\frac{trt_i}{\hat{e}_i} + \frac{1- trt_i}{1 - \hat{e}_i}}
+and
+\deqn{trt_i + (1 - trt_i) \frac{\hat{e}_i}{1 - \hat{e}_i}}
 }
 \references{
+Lee, B. K., Lessler, J., & Stuart, E. A. (2010). \emph{Improving propensity score weighting using machine learning. Statistics in Medicine}. Statistics in Medicine, 29(3), 337-346.
+
 Pirracchio, R., Petersen, M. L., & Laan, M. van der. (2015). \emph{Improving Propensity Score Estimators’ Robustness to Model Misspecification Using Super Learner}. American Journal of Epidemiology, 181(2), 108–119. \url{https://doi.org/10.1093/aje/kwu253}
 }
 \seealso{
