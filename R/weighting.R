@@ -313,16 +313,16 @@ compute_sipw <- function(data, treatment, trt_indicator = 1, outcome, object = N
 #' @param ... Additional arguments of fitting functions
 #' @details
 #' This functions add columns by
-#' \deqn{\frac{trt_i}{\hat{e}_i} + \frac{1- trt_i}{1 - \hat{e}_i}}
+#' \deqn{\frac{trt_i}{\hat{e}_i} - \frac{1- trt_i}{1 - \hat{e}_i}}
 #' and
-#' \deqn{trt_i + (1 - trt_i) \frac{\hat{e}_i}{1 - \hat{e}_i}}
+#' \deqn{trt_i - (1 - trt_i) \frac{\hat{e}_i}{1 - \hat{e}_i}}
 #' @references Lee, B. K., Lessler, J., & Stuart, E. A. (2010). \emph{Improving propensity score weighting using machine learning. Statistics in Medicine}. Statistics in Medicine, 29(3), 337-346.
 #' @references Pirracchio, R., Petersen, M. L., & Laan, M. van der. (2015). \emph{Improving Propensity Score Estimators’ Robustness to Model Misspecification Using Super Learner}. American Journal of Epidemiology, 181(2), 108–119. \url{https://doi.org/10.1093/aje/kwu253}
 #' @seealso
 #' \code{\link{add_propensity}}
 #' @import data.table
 #' @export
-add_iptw <- function(data, treatment, trt_indicator = 1, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), mc_col = NULL, sc_col = NULL, parallel = FALSE, ...) {
+add_weighting <- function(data, treatment, trt_indicator = 1, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), mc_col = NULL, sc_col = NULL, parallel = FALSE, ...) {
   if (is.data.table(data)) {
     data <- copy(data)
   } else {
@@ -334,8 +334,8 @@ add_iptw <- function(data, treatment, trt_indicator = 1, object = NULL, formula 
       treatment := ifelse(get(treatment) == trt_indicator, 1, 0)] %>%
     .[,
       `:=`(
-        iptw = treatment / propensity + (1 - treatment) / (1 - propensity),
-        propwt = treatment + (1 - treatment) * propensity / (1 - propensity)
+        iptw = treatment / propensity - (1 - treatment) / (1 - propensity),
+        propwt = treatment - (1 - treatment) * propensity / (1 - propensity)
       )] %>%
     # .[,
     #   iptw := treatment / propensity + (1 - treatment) / (1 - propensity)] %>%

@@ -2,8 +2,8 @@
 
 S3method(print,propmod)
 export("%>%")
-export(add_iptw)
 export(add_propensity)
+export(add_weighting)
 export(build_covariate)
 export(compute_asam)
 export(compute_balance)
