@@ -9,6 +9,7 @@ compute_ipw(
   treatment,
   trt_indicator = 1,
   outcome,
+  weight = NULL,
   object = NULL,
   formula = NULL,
   method = c("logit", "rf", "cart", "SVM"),
@@ -26,6 +27,8 @@ compute_ipw(
 \item{trt_indicator}{Value that indicates the unit is treated}
 
 \item{outcome}{Outcome variable name}
+
+\item{weight}{If weighting column exists, it can be specified for computing efficiency}
 
 \item{object}{A \code{propmod} object if already fitted.}
 

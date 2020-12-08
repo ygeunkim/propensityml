@@ -214,6 +214,7 @@ add_ipw_wt <- function(data, treatment, trt_indicator = 1, object = NULL, formul
 #' @param treatment Treatment variable name
 #' @param trt_indicator Value that indicates the unit is treated
 #' @param outcome Outcome variable name
+#' @param weight If weighting column exists, it can be specified for computing efficiency
 #' @param object A \code{propmod} object if already fitted.
 #' @param formula If not, write a \link[stats]{formula} to be fitted. Remember that you don't have to worry about group variable. \link[data.table]{.SD} do exclude `by`.
 #' @param method Estimating methods
@@ -229,7 +230,9 @@ add_ipw_wt <- function(data, treatment, trt_indicator = 1, object = NULL, formul
 #' @param ... Additional arguments of fitting functions
 #' @import data.table
 #' @export
-compute_ipw <- function(data, treatment, trt_indicator = 1, outcome, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), mc_col = NULL, sc_col = NULL, parallel = FALSE, ...) {
+compute_ipw <- function(data, treatment, trt_indicator = 1, outcome, weight = NULL,
+                        object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"),
+                        mc_col = NULL, sc_col = NULL, parallel = FALSE, ...) {
   if (is.data.table(data)) {
     data <- copy(data)
   } else {
@@ -239,10 +242,18 @@ compute_ipw <- function(data, treatment, trt_indicator = 1, outcome, object = NU
   mc <- c(mc_col, sc_col)
   if (any(is.null(mc))) mc <- NULL
   #-------------------------------
+  if (is.null(weight)) {
+    data <-
+      data %>%
+      add_ipw_wt(treatment = treatment, trt_indicator = trt_indicator, object = object, formula = formula, method = method, mc_col = mc_col, sc_col = sc_col, parallel = parallel, ...) %>%
+      .[,
+        .(IPW = mean(ipw_wt * get(outcome))),
+        by = mc]
+    return(data)
+  }
   data %>%
-    add_ipw_wt(treatment = treatment, trt_indicator = trt_indicator, object = object, formula = formula, method = method, mc_col = mc_col, sc_col = sc_col, parallel = parallel, ...) %>%
     .[,
-      .(IPW = mean(ipw_wt * get(outcome))),
+      .(IPW = mean(get(weight) * get(outcome))),
       by = mc]
 }
 
@@ -254,6 +265,7 @@ compute_ipw <- function(data, treatment, trt_indicator = 1, outcome, object = NU
 #' @param treatment Treatment variable name
 #' @param trt_indicator Value that indicates the unit is treated
 #' @param outcome Outcome variable name
+#' @param weight If weighting column exists, it can be specified for computing efficiency
 #' @param object A \code{propmod} object if already fitted.
 #' @param formula If not, write a \link[stats]{formula} to be fitted. Remember that you don't have to worry about group variable. \link[data.table]{.SD} do exclude `by`.
 #' @param method Estimating methods
@@ -269,7 +281,9 @@ compute_ipw <- function(data, treatment, trt_indicator = 1, outcome, object = NU
 #' @param ... Additional arguments of fitting functions
 #' @import data.table
 #' @export
-compute_sipw <- function(data, treatment, trt_indicator = 1, outcome, object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"), mc_col = NULL, sc_col = NULL, parallel = FALSE, ...) {
+compute_sipw <- function(data, treatment, trt_indicator = 1, outcome, weight = NULL,
+                         object = NULL, formula = NULL, method = c("logit", "rf", "cart", "SVM"),
+                         mc_col = NULL, sc_col = NULL, parallel = FALSE, ...) {
   if (is.data.table(data)) {
     data <- copy(data)
   } else {
@@ -279,15 +293,24 @@ compute_sipw <- function(data, treatment, trt_indicator = 1, outcome, object = N
   mc <- c(mc_col, sc_col)
   if (any(is.null(mc))) mc <- NULL
   #-------------------------------
+  if (is.null(weight)) {
+    data <-
+      data %>%
+      add_ipw_wt(treatment = treatment, trt_indicator = trt_indicator, object = object, formula = formula, method = method, mc_col = mc_col, sc_col = sc_col, parallel = parallel, ...) %>%
+      .[,
+        sipw_wt := ipw_wt / sum(ipw_wt),
+        by = treatment] %>%
+      .[,
+        .(SIPW = sum(sipw_wt * get(outcome))),
+        by = mc]
+    return(data)
+  }
   data %>%
-    add_ipw_wt(treatment = treatment, trt_indicator = trt_indicator, object = object, formula = formula, method = method, mc_col = mc_col, sc_col = sc_col, parallel = parallel, ...) %>%
     .[,
-      sipw_wt := ipw_wt / sum(ipw_wt),
+      sipw_wt := get(weight) / sum(get(weight)),
       by = treatment] %>%
     .[,
-      .(
-        SIPW = sum(treatment * sipw_wt * get(outcome) - (1 - treatment) * sipw_wt * get(outcome))
-      ),
+      .(SIPW = sum(sipw_wt * get(outcome))),
       by = mc]
 }
 
